@@ -3,10 +3,14 @@ from sklearn import svm
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
-training_data = pd.read_csv('transformData.csv')
-clf = svm.SVC()
-X = training_data.drop(['did_win'], axis=1)
-y = training_data['did_win']
+training_data = pd.read_csv('transformDataPlus.csv')
+clf_win = svm.SVC()
+clf_total = svm.SVC()
+clf_spread = svm.SVC()
+X = training_data.drop(['did_win', 'total_points', 'spread'], axis=1)
+y_win = training_data['did_win']
+y_total = training_data['total_points']
+y_spread = training_data['spread']
 
 def get_teams():
     teams = list(list())
@@ -16,6 +20,8 @@ def get_teams():
         while True:
             team1 = input('Team 1: ')
             if not team_names.loc[team_names['abbreviation'] == team1].empty:
+                spread = input('Spread: ')
+                total = input('OverUnder: ')
                 break
             else:
                 print("Invalid team (ohio state --> OHIO-STATE)")
@@ -27,7 +33,7 @@ def get_teams():
             else:
                 print("Invalid team")
 
-        teams.append([team1, team2])
+        teams.append([team1, team2, float(spread), float(total)])
         cont = input('More Games? (y/n): ')
         if(cont.lower() == 'y'):
             print('\n')
@@ -44,21 +50,26 @@ def get_teams():
         make_predictions(mylist)
 
 def fit_model():
-    
-
-
-    clf.fit(X, y)
+    clf_win.fit(X, y_win)
+    clf_spread.fit(X, y_spread)
+    clf_total.fit(X, y_total)
 
 
 def make_predictions(teams):
 
     team1 = Team(teams[0])
     team2 = Team(teams[1])
+    spread = teams[2]
+    total = teams[3]
 
     team1_data = team1.dataframe
     team2_data = team2.dataframe
     team1_data['did_win'] = 'NaN'
     team2_data['did_win'] = 'NaN'
+    team1_data['spread'] = 'NaN'
+    team2_data['spread'] = 'NaN'
+    team1_data['total_points'] = 'NaN'
+    team2_data['total_points'] = 'NaN'
 
     team1_data = team1_data[training_data.columns]
     team2_data = team2_data[training_data.columns]
@@ -66,18 +77,31 @@ def make_predictions(teams):
     team2_data = team2_data.astype(float)
 
     combined = pd.DataFrame()
+    combined2 = pd.DataFrame()
     team1_data = team1_data.append(team2_data)
     combined = combined.append(team1_data.iloc[0] - team1_data.iloc[1], ignore_index=True)
+    combined2 = combined2.append(team1_data.iloc[1] - team1_data.iloc[0], ignore_index=True)
 
 
-    test = combined.drop(['did_win'], axis=1)
-    results = clf.predict(test)
+    test = combined.drop(['did_win', 'spread', 'total_points'], axis=1)
+    test2 = combined2.drop(['did_win', 'spread', 'total_points'], axis=1)
+    results_win = clf_win.predict(test)
+    results_win2 = clf_win.predict(test2)
+    results_total = clf_total.predict(test)
+    results_spread = clf_spread.predict(test)
 
-    if str(results[0]) == '1':
-        print("{}[x] vs {}[]".format(teams[0], teams[1]))
+    is_safe = ''
+    if not str(results_win[0]) == str(results_win2[0]):
+        is_safe = 'SAFE'
+
+    if str(results_win[0]) == '1':
+        print("{}[x] vs {}[] {}".format(teams[0], teams[1], is_safe))
     else:
-        print("{}[] vs {}[x]".format(teams[0], teams[1]))
+        print("{}[] vs {}[x] {}".format(teams[0], teams[1], is_safe))
 
+    print("Spread: {} Predicted: {}".format(spread, results_spread))
+    print("OverUnder: {} Predicted: {}".format(total, results_total))
+    print('\n')
     # clf2 = svm.SVC()
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=42)
     # clf2.fit(X_train, y_train)
