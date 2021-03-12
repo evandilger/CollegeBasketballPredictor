@@ -3,7 +3,7 @@ from sklearn import svm
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
-training_data = pd.read_csv('transformData.csv')
+training_data = pd.read_csv('seperateTransformData.csv')
 clf = svm.SVC(probability=True)
 X = training_data.drop(['did_win'], axis=1)
 y = training_data['did_win']
@@ -57,18 +57,19 @@ def make_predictions(teams):
 
     team1_data = team1.dataframe
     team2_data = team2.dataframe
-    team1_data['did_win'] = 'NaN'
-    team2_data['did_win'] = 'NaN'
+    team1_data['joincol'] = '1'
+    team2_data['joincol'] = '1'
 
-    team1_data = team1_data[training_data.columns]
-    team2_data = team2_data[training_data.columns]
-    team1_data = team1_data.astype(float)
-    team2_data = team2_data.astype(float)
+    # team1_data = team1_data[training_data.columns]
+    # team2_data = team2_data[training_data.columns]
+    # team1_data = team1_data.astype(float)
+    # team2_data = team2_data.astype(float)
 
     combined = pd.DataFrame()
-    team1_data = team1_data.append(team2_data)
-    combined = combined.append(team1_data.iloc[0] - team1_data.iloc[1], ignore_index=True)
-
+    # team1_data = team1_data.append(team2_data)
+    combined = pd.merge(left=team1_data,right=team2_data, on='joincol', how='outer')
+    combined['did_win'] = 'NaN'
+    combined = combined[training_data.columns]
 
     test = combined.drop(['did_win'], axis=1)
     results = clf.predict_proba(test)
