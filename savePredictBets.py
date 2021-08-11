@@ -10,7 +10,7 @@ clf_spread = svm.SVC()
 y_win = training_data['did_win']
 y_total = training_data['total_points']
 y_spread = training_data['spread']
-X = training_data.drop(['did_win', 'total_points', 'spread'], axis=1)
+X = training_data.drop(['did_win', 'total_points', 'spread', 'wins_x', 'wins_y'], axis=1)
 
 
 def get_teams():
@@ -85,7 +85,7 @@ def make_predictions(teams):
     combined = combined[training_data.columns]
 
 
-    test = combined.drop(['did_win', 'spread', 'total_points'], axis=1)
+    test = combined.drop(['did_win', 'spread', 'total_points', 'wins_x', 'wins_y'], axis=1)
     results_win = clf_win.predict_proba(test)
     results_win = results_win[0]
     results_total = clf_total.predict(test)
@@ -113,7 +113,7 @@ def make_predictions(teams):
 
 def savePrediction(team1, team2, results_win, spread, total):
     csv = pd.read_csv('previousPredictions.csv', 
-        usecols=['team1', 'team2', 'p_winner', 'p_perc', 'p_spread', 'p_total'])
+        usecols=['team1', 'team2', 'p_winner', 'p_perc', 'p_spread', 'p_total', 'CORRECT', 'INCORRECT'])
     winner = ''
     p_perc = ''
 
@@ -130,7 +130,9 @@ def savePrediction(team1, team2, results_win, spread, total):
         'p_winner': winner,
         'p_perc': perc,
         'p_spread': spread,
-        'p_total': total
+        'p_total': total,
+        'CORRECT': '',
+        'INCORRECT': ''
     }
 
     game = pd.DataFrame(data, index=['0'])
